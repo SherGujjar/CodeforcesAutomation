@@ -1,4 +1,6 @@
 const puppeteer = require('puppeteer');
+const pdf = require('pdfkit')
+const fs = require('fs')
 let page ;
 const link = "https://www.youtube.com/playlist?list=PLzkuLC6Yvumv_Rd5apfPRWEcjf9b1JRnq";
 
@@ -30,14 +32,17 @@ const link = "https://www.youtube.com/playlist?list=PLzkuLC6Yvumv_Rd5apfPRWEcjf9
         console.log(currentVideos)
 
 
-        while(totalVideos-currentVideos>0){
+        while(totalVideos-currentVideos>20){
             await scrollToBottom()
             currentVideos = await currentVideosLength()
-
+         
         }
 
         const allVideosList = await getVideosInfo();
-        console.log(allVideosList);
+        let pdfDoc =  new pdf
+        pdfDoc.pipe(fs.createWriteStream('playList.pdf'));
+        pdfDoc.text(JSON.stringify(allVideosList));
+        pdfDoc.end();
 
 
 
@@ -72,7 +77,7 @@ function getLength(durationSelect){
 
 
 async function scrollToBottom(){
-    await page.evaluate(gotoBottom)
+    return await page.evaluate(gotoBottom)
 
     function gotoBottom(){
         window.scrollBy(0,window.innerHeight)
@@ -81,6 +86,7 @@ async function scrollToBottom(){
 
 
 async function getVideosInfo(){
+    console.log("Here")
     let list = await page.evaluate(getTitleAndDuration,'#video-title.style-scope.ytd-playlist-video-renderer','span#text');
     return list
 }
@@ -90,7 +96,7 @@ function getTitleAndDuration(titleSelector,durationSelector){
     const videoTitle = document.querySelectorAll(titleSelector);
     const videoDuration = document.querySelectorAll(durationSelector);
   
-    const videoList = [];
+    let videoList = [];
     for(let i=0;i<videoDuration.length;i++){
         let title = videoTitle[i].innerText;
         let duration = videoDuration[i].innerText;
